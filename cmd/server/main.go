@@ -24,7 +24,7 @@ func main() {
 	slog.Info("configuration loaded", "env", cfg.Env, "port", cfg.Port)
 
 	ctx := context.Background()
-	db, err := database.Connect(ctx, cfg.DatabaseURL)
+	db, err := database.Connect(ctx, cfg)
 	if err != nil {
 		slog.Error("failed to connect to database", "error", err)
 		os.Exit(1)
