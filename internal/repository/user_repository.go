@@ -64,3 +64,27 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 	}
 	return user, nil
 }
+
+func (r *UserRepository) FindByID(ctx context.Context, id int) (*models.User, error) {
+	query := `
+		SELECT id, name, email, password, created_at, updated_at
+		FROM users
+		WHERE id = $1
+	`
+	user := &models.User{}
+	err := r.db.Pool.QueryRow(ctx, query, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return user, nil
+}

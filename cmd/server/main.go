@@ -9,6 +9,7 @@ import (
 	"qback/internal/config"
 	"qback/internal/database"
 	"qback/internal/handlers"
+	"qback/internal/middleware"
 	"qback/internal/repository"
 )
 
@@ -42,10 +43,14 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 	authHandler := handlers.NewAuthHandler(userRepo, cfg)
+	userHandler := handlers.NewUserHandler(userRepo)
+	authMiddleware := middleware.AuthMiddleware(cfg.JWTSecret)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/signup", authHandler.Signup)
-	mux.HandleFunc("/login", authHandler.Login)
+	mux.HandleFunc("/api/signup", authHandler.Signup)
+	mux.HandleFunc("/api/login", authHandler.Login)
+
+	mux.Handle("/api/user/me", authMiddleware(http.HandlerFunc(userHandler.GetMe)))
 
 	slog.Info("qback server starting...", "port", cfg.Port)
 
