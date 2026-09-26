@@ -11,6 +11,7 @@ import (
 	"qback/internal/handlers"
 	"qback/internal/middleware"
 	"qback/internal/repository"
+	"qback/internal/service"
 )
 
 func main() {
@@ -46,13 +47,20 @@ func main() {
 	userHandler := handlers.NewUserHandler(userRepo)
 	authMiddleware := middleware.AuthMiddleware(cfg.JWTSecret)
 
+	serviceRepo := repository.NewServiceRepository(db)
+	serviceLogic := service.NewService(serviceRepo)
+	serviceHandler := handlers.NewServiceHandler(serviceLogic)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/signup", authHandler.Signup)
 	mux.HandleFunc("/api/login", authHandler.Login)
 
 	mux.Handle("/api/user/me", authMiddleware(http.HandlerFunc(userHandler.GetMe)))
 
-	slog.Info("qback server starting...", "port", cfg.Port)
+	mux.HandleFunc("GET /api/services", serviceHandler.GetAll)
+	mux.HandleFunc("GET /api/services/{id}", serviceHandler.GetByID)
+
+	slog.Info("server starting...", "port", cfg.Port)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
