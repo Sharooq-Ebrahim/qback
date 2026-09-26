@@ -8,17 +8,17 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Sharooq-Ebrahim/qback/internal/config"
+	"qback/internal/config"
 )
 
 type DB struct {
 	Pool *pgxpool.Pool
 }
 
-func Connect(ctx context.Context, cfg *config.Config) (*DB, error) {
+func Connect(ctx context.Context, config *config.Config) (*DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode,
+		config.DBHost, config.DBPort, config.DBUser, config.DBPassword, config.DBName, config.DBSSLMode,
 	)
 
 	cfg, err := pgxpool.ParseConfig(dsn)

@@ -5,8 +5,11 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/sharooq/qback/internal/config"
-	"github.com/sharooq/qback/internal/database"
+	"net/http"
+	"qback/internal/config"
+	"qback/internal/database"
+	"qback/internal/handlers"
+	"qback/internal/repository"
 )
 
 func main() {
@@ -21,7 +24,12 @@ func main() {
 		slog.Error("failed to load configuration", "error", err)
 		os.Exit(1)
 	}
-	slog.Info("configuration loaded", "env", cfg.Env, "port", cfg.Port)
+	slog.Info("configuration loaded", "port", cfg.Port)
+
+	if err := database.RunMigrations(cfg); err != nil {
+		slog.Error("failed to run migrations", "error", err)
+		os.Exit(1)
+	}
 
 	ctx := context.Background()
 	db, err := database.Connect(ctx, cfg)
@@ -32,5 +40,22 @@ func main() {
 	defer db.Close()
 	slog.Info("database connected", "max_conns", 10, "min_conns", 2)
 
+	userRepo := repository.NewUserRepository(db)
+	authHandler := handlers.NewAuthHandler(userRepo, cfg)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/signup", authHandler.Signup)
+	mux.HandleFunc("/login", authHandler.Login)
+
 	slog.Info("qback server starting...", "port", cfg.Port)
+
+	server := &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: mux,
+	}
+
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		slog.Error("server failed", "error", err)
+		os.Exit(1)
+	}
 }
