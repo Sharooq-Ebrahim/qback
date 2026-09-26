@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS services (
+    id SERIAL PRIMARY KEY,
+    venue_id INTEGER NOT NULL REFERENCES venues(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    duration_minutes INTEGER NOT NULL DEFAULT 30,
+    price DECIMAL(10, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_services_venue_id ON services(venue_id);
