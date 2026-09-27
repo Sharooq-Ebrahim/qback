@@ -14,6 +14,7 @@ var (
 	ErrUnauthorizedTicket   = errors.New("unauthorized to access this ticket")
 	ErrTicketNotWaiting     = errors.New("ticket is not in waiting state")
 	ErrServiceVenueMismatch = errors.New("service does not belong to the specified venue")
+	ErrAlreadyInQueue       = errors.New("user is already in the queue for this service")
 )
 
 type TicketDetails struct {
@@ -87,6 +88,16 @@ func (s *queueServiceImpl) JoinQueue(ctx context.Context, userID, venueID, servi
 
 	if svc.VenueID != venueID {
 		return nil, ErrServiceVenueMismatch
+	}
+
+	activeTickets, err := s.queueRepo.GetActiveByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range activeTickets {
+		if t.ServiceID == serviceID {
+			return nil, ErrAlreadyInQueue
+		}
 	}
 
 	ticket := &models.QueueTicket{

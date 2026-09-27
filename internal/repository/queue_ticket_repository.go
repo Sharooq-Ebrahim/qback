@@ -123,7 +123,7 @@ func (r *queueTicketRepository) GetActiveByUserID(ctx context.Context, userID in
 		SELECT id, user_id, venue_id, service_id, ticket_number, status, joined_at, served_at, cancelled_at, created_at, updated_at
 		FROM queue_tickets
 		WHERE user_id = $1 AND status IN ('waiting', 'serving')
-		ORDER BY joined_at DESC
+		ORDER BY joined_at DESC, id DESC
 	`
 	rows, err := r.db.Pool.Query(ctx, query, userID)
 	if err != nil {
@@ -138,7 +138,7 @@ func (r *queueTicketRepository) GetHistoryByUserID(ctx context.Context, userID i
 		SELECT id, user_id, venue_id, service_id, ticket_number, status, joined_at, served_at, cancelled_at, created_at, updated_at
 		FROM queue_tickets
 		WHERE user_id = $1 AND status IN ('served', 'cancelled', 'no_show')
-		ORDER BY created_at DESC
+		ORDER BY created_at DESC, id DESC
 	`
 	rows, err := r.db.Pool.Query(ctx, query, userID)
 	if err != nil {
@@ -185,7 +185,7 @@ func (r *queueTicketRepository) GetWaitingByServiceID(ctx context.Context, servi
 		SELECT id, user_id, venue_id, service_id, ticket_number, status, joined_at, served_at, cancelled_at, created_at, updated_at
 		FROM queue_tickets
 		WHERE service_id = $1 AND status = 'waiting'
-		ORDER BY joined_at ASC
+		ORDER BY joined_at ASC, id ASC
 	`
 	rows, err := r.db.Pool.Query(ctx, query, serviceID)
 	if err != nil {

@@ -50,6 +50,10 @@ func (h *TokenHandler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, `{"error": "`+err.Error()+`"}`, http.StatusBadRequest)
 			return
 		}
+		if errors.Is(err, service.ErrAlreadyInQueue) {
+			http.Error(w, `{"error": "`+err.Error()+`"}`, http.StatusConflict)
+			return
+		}
 		http.Error(w, `{"error": "failed to join queue"}`, http.StatusInternalServerError)
 		return
 	}
