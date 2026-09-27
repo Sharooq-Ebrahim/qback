@@ -55,6 +55,10 @@ func main() {
 	venueLogic := service.NewVenueService(venueRepo)
 	venueHandler := handlers.NewVenueHandler(venueLogic)
 
+	queueRepo := repository.NewQueueTicketRepository(db)
+	queueLogic := service.NewQueueService(queueRepo, serviceRepo)
+	tokenHandler := handlers.NewTokenHandler(queueLogic)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/signup", authHandler.Signup)
 	mux.HandleFunc("/api/login", authHandler.Login)
@@ -67,6 +71,12 @@ func main() {
 	mux.HandleFunc("GET /api/venues", venueHandler.GetAll)
 	mux.HandleFunc("GET /api/venues/{id}", venueHandler.GetByID)
 	mux.HandleFunc("GET /api/venues/{id}/services", serviceHandler.GetByVenueID)
+
+	mux.Handle("POST /api/tokens", authMiddleware(http.HandlerFunc(tokenHandler.JoinQueue)))
+	mux.Handle("GET /api/tokens/active", authMiddleware(http.HandlerFunc(tokenHandler.GetActive)))
+	mux.Handle("GET /api/tokens/history", authMiddleware(http.HandlerFunc(tokenHandler.GetHistory)))
+	mux.Handle("GET /api/tokens/{id}", authMiddleware(http.HandlerFunc(tokenHandler.GetByID)))
+	mux.Handle("POST /api/tokens/{id}/cancel", authMiddleware(http.HandlerFunc(tokenHandler.Cancel)))
 
 	slog.Info("server starting...", "port", cfg.Port)
 
