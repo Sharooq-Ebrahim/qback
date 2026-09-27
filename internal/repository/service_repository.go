@@ -18,6 +18,7 @@ type ServiceRepository interface {
 	GetAll(ctx context.Context) ([]*models.Service, error)
 	GetByID(ctx context.Context, id int) (*models.Service, error)
 	Search(ctx context.Context, query string) ([]*models.Service, error)
+	GetByVenueID(ctx context.Context, venueID int) ([]*models.Service, error)
 }
 
 type serviceRepository struct {
@@ -100,6 +101,45 @@ func (r *serviceRepository) Search(ctx context.Context, searchQuery string) ([]*
 		ORDER BY created_at DESC
 	`
 	rows, err := r.db.Pool.Query(ctx, query, searchQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var services []*models.Service
+	for rows.Next() {
+		service := &models.Service{}
+		err := rows.Scan(
+			&service.ID,
+			&service.VenueID,
+			&service.Name,
+			&service.Description,
+			&service.DurationMinutes,
+			&service.Price,
+			&service.CreatedAt,
+			&service.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		services = append(services, service)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return services, nil
+}
+
+func (r *serviceRepository) GetByVenueID(ctx context.Context, venueID int) ([]*models.Service, error) {
+	query := `
+		SELECT id, venue_id, name, description, duration_minutes, price, created_at, updated_at
+		FROM services
+		WHERE venue_id = $1
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.Pool.Query(ctx, query, venueID)
 	if err != nil {
 		return nil, err
 	}

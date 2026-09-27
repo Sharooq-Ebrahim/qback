@@ -76,3 +76,31 @@ func (h *ServiceHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(svcObj)
 }
+
+func (h *ServiceHandler) GetByVenueID(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	venueID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, `{"error": "invalid venue id format"}`, http.StatusBadRequest)
+		return
+	}
+
+	services, err := h.svc.GetByVenueID(r.Context(), venueID)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidID) {
+			http.Error(w, `{"error": "invalid venue id"}`, http.StatusBadRequest)
+			return
+		}
+		http.Error(w, `{"error": "failed to retrieve services"}`, http.StatusInternalServerError)
+		return
+	}
+
+	if services == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte("[]"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(services)
+}

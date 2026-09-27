@@ -19,6 +19,7 @@ type Service interface {
 	GetAll(ctx context.Context) ([]*models.Service, error)
 	GetByID(ctx context.Context, id int) (*models.Service, error)
 	Search(ctx context.Context, query string) ([]*models.Service, error)
+	GetByVenueID(ctx context.Context, venueID int) ([]*models.Service, error)
 }
 
 type serviceImpl struct {
@@ -50,4 +51,11 @@ func (s *serviceImpl) Search(ctx context.Context, query string) ([]*models.Servi
 	}
 
 	return s.repo.Search(ctx, trimmedQuery)
+}
+
+func (s *serviceImpl) GetByVenueID(ctx context.Context, venueID int) ([]*models.Service, error) {
+	if venueID <= 0 {
+		return nil, ErrInvalidID
+	}
+	return s.repo.GetByVenueID(ctx, venueID)
 }

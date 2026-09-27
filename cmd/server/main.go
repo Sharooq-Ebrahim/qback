@@ -51,6 +51,10 @@ func main() {
 	serviceLogic := service.NewService(serviceRepo)
 	serviceHandler := handlers.NewServiceHandler(serviceLogic)
 
+	venueRepo := repository.NewVenueRepository(db)
+	venueLogic := service.NewVenueService(venueRepo)
+	venueHandler := handlers.NewVenueHandler(venueLogic)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/signup", authHandler.Signup)
 	mux.HandleFunc("/api/login", authHandler.Login)
@@ -59,6 +63,10 @@ func main() {
 
 	mux.HandleFunc("GET /api/services", serviceHandler.GetAll)
 	mux.HandleFunc("GET /api/services/{id}", serviceHandler.GetByID)
+
+	mux.HandleFunc("GET /api/venues", venueHandler.GetAll)
+	mux.HandleFunc("GET /api/venues/{id}", venueHandler.GetByID)
+	mux.HandleFunc("GET /api/venues/{id}/services", serviceHandler.GetByVenueID)
 
 	slog.Info("server starting...", "port", cfg.Port)
 
