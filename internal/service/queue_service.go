@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
+	"fmt"
+	"math/rand"
 
 	"qback/internal/models"
 	"qback/internal/repository"
@@ -45,9 +45,7 @@ func NewQueueService(queueRepo repository.QueueTicketRepository, serviceRepo rep
 }
 
 func generateTicketNumber() string {
-	b := make([]byte, 3)
-	rand.Read(b)
-	return hex.EncodeToString(b)
+	return fmt.Sprintf("QB-%06d", rand.Intn(1000000))
 }
 
 func (s *queueServiceImpl) calculateQueueStats(ctx context.Context, ticket *models.QueueTicket, svc *models.Service) (int, int, int, error) {
