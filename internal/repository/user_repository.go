@@ -26,11 +26,11 @@ func NewUserRepository(db *database.DB) *UserRepository {
 
 func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	query := `
-		INSERT INTO users (name, email, password)
-		VALUES ($1, $2, $3)
+		INSERT INTO users (name, email, password, role)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at, updated_at
 	`
-	err := r.db.Pool.QueryRow(ctx, query, user.Name, user.Email, user.Password).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.Pool.QueryRow(ctx, query, user.Name, user.Email, user.Password, user.Role).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -43,7 +43,7 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, name, email, password, created_at, updated_at
+		SELECT id, name, email, password, role, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
@@ -53,6 +53,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 		&user.Name,
 		&user.Email,
 		&user.Password,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -67,7 +68,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 
 func (r *UserRepository) FindByID(ctx context.Context, id int) (*models.User, error) {
 	query := `
-		SELECT id, name, email, password, created_at, updated_at
+		SELECT id, name, email, password, role, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
@@ -77,6 +78,7 @@ func (r *UserRepository) FindByID(ctx context.Context, id int) (*models.User, er
 		&user.Name,
 		&user.Email,
 		&user.Password,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)

@@ -58,6 +58,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: string(hashedPassword),
+		Role:     models.RoleUser,
 	}
 
 	err = h.repo.Create(r.Context(), user)
@@ -117,7 +118,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.GenerateJWT(h.config.JWTSecret, user.ID, user.Email)
+	token, err := auth.GenerateJWT(h.config.JWTSecret, user.ID, user.Email, string(user.Role))
 	if err != nil {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return

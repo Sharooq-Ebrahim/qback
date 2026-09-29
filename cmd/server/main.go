@@ -10,6 +10,7 @@ import (
 	"qback/internal/database"
 	"qback/internal/handlers"
 	"qback/internal/middleware"
+	"qback/internal/models"
 	"qback/internal/repository"
 	"qback/internal/service"
 )
@@ -63,7 +64,13 @@ func main() {
 	mux.HandleFunc("/api/signup", authHandler.Signup)
 	mux.HandleFunc("/api/login", authHandler.Login)
 
-	mux.Handle("/api/user/me", authMiddleware(http.HandlerFunc(userHandler.GetMe)))
+	requireUser := middleware.RequireRole(string(models.RoleUser), string(models.RoleStaff), string(models.RoleAdmin))
+	
+	protectedUser := func(h http.Handler) http.Handler {
+		return authMiddleware(requireUser(h))
+	}
+
+	mux.Handle("/api/user/me", protectedUser(http.HandlerFunc(userHandler.GetMe)))
 
 	mux.HandleFunc("GET /api/services", serviceHandler.GetAll)
 	mux.HandleFunc("GET /api/services/{id}", serviceHandler.GetByID)
@@ -72,11 +79,11 @@ func main() {
 	mux.HandleFunc("GET /api/venues/{id}", venueHandler.GetByID)
 	mux.HandleFunc("GET /api/venues/{id}/services", serviceHandler.GetByVenueID)
 
-	mux.Handle("POST /api/tokens", authMiddleware(http.HandlerFunc(tokenHandler.JoinQueue)))
-	mux.Handle("GET /api/tokens/active", authMiddleware(http.HandlerFunc(tokenHandler.GetActive)))
-	mux.Handle("GET /api/tokens/history", authMiddleware(http.HandlerFunc(tokenHandler.GetHistory)))
-	mux.Handle("GET /api/tokens/{id}", authMiddleware(http.HandlerFunc(tokenHandler.GetByID)))
-	mux.Handle("POST /api/tokens/{id}/cancel", authMiddleware(http.HandlerFunc(tokenHandler.Cancel)))
+	mux.Handle("POST /api/tokens", protectedUser(http.HandlerFunc(tokenHandler.JoinQueue)))
+	mux.Handle("GET /api/tokens/active", protectedUser(http.HandlerFunc(tokenHandler.GetActive)))
+	mux.Handle("GET /api/tokens/history", protectedUser(http.HandlerFunc(tokenHandler.GetHistory)))
+	mux.Handle("GET /api/tokens/{id}", protectedUser(http.HandlerFunc(tokenHandler.GetByID)))
+	mux.Handle("POST /api/tokens/{id}/cancel", protectedUser(http.HandlerFunc(tokenHandler.Cancel)))
 
 	slog.Info("server starting...", "port", cfg.Port)
 
