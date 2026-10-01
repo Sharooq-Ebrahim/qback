@@ -60,14 +60,23 @@ func main() {
 	queueLogic := service.NewQueueService(queueRepo, serviceRepo)
 	tokenHandler := handlers.NewTokenHandler(queueLogic)
 
+	staffLogic := service.NewStaffService(queueRepo)
+	staffHandler := handlers.NewStaffHandler(staffLogic)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/signup", authHandler.Signup)
 	mux.HandleFunc("/api/login", authHandler.Login)
 
 	requireUser := middleware.RequireRole(string(models.RoleUser), string(models.RoleStaff), string(models.RoleAdmin))
-	
+
 	protectedUser := func(h http.Handler) http.Handler {
 		return authMiddleware(requireUser(h))
+	}
+
+	requireStaff := middleware.RequireRole(string(models.RoleStaff), string(models.RoleAdmin))
+
+	protectedAdmin := func(h http.Handler) http.Handler {
+		return authMiddleware(requireStaff(h))
 	}
 
 	mux.Handle("/api/user/me", protectedUser(http.HandlerFunc(userHandler.GetMe)))
@@ -85,11 +94,17 @@ func main() {
 	mux.Handle("GET /api/tokens/{id}", protectedUser(http.HandlerFunc(tokenHandler.GetByID)))
 	mux.Handle("POST /api/tokens/{id}/cancel", protectedUser(http.HandlerFunc(tokenHandler.Cancel)))
 
+	mux.Handle("GET /api/staff/queues", protectedAdmin(http.HandlerFunc(staffHandler.GetQueues)))
+	mux.Handle("POST /api/staff/queues/{queue_id}/call-next", protectedAdmin(http.HandlerFunc(staffHandler.CallNext)))
+	mux.Handle("POST /api/staff/tickets/{ticket_id}/serve", protectedAdmin(http.HandlerFunc(staffHandler.ServeTicket)))
+	mux.Handle("POST /api/staff/tickets/{ticket_id}/no-show", protectedAdmin(http.HandlerFunc(staffHandler.NoShowTicket)))
+	mux.Handle("POST /api/staff/tickets/{ticket_id}/cancel", protectedAdmin(http.HandlerFunc(staffHandler.CancelTicket)))
+
 	slog.Info("server starting...", "port", cfg.Port)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
-		Handler: mux,
+		Handler: middleware.CORS(mux),
 	}
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
