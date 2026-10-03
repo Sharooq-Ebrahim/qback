@@ -202,7 +202,7 @@ func (r *queueTicketRepository) GetWaitingByServiceID(ctx context.Context, servi
 
 func (r *queueTicketRepository) GetStaffQueues(ctx context.Context, ownerID int, venueID, serviceID *int, status *string) ([]*models.QueueTicket, error) {
 	query := `
-		SELECT qt.id, qt.user_id, qt.venue_id, qt.service_id, qt.ticket_number, qt.status, qt.joined_at, qt.served_at, qt.cancelled_at, qt.created_at, qt.updated_at
+		SELECT qt.id, qt.user_id, qt.venue_id,v.name as venue_name , qt.service_id,s.name as service_name, qt.ticket_number, qt.status, qt.joined_at, qt.served_at, qt.cancelled_at, qt.created_at, qt.updated_at
 		FROM queue_tickets qt
 		JOIN services s ON qt.service_id = s.id
 		JOIN venues v ON s.venue_id = v.id
@@ -234,7 +234,34 @@ func (r *queueTicketRepository) GetStaffQueues(ctx context.Context, ownerID int,
 		return nil, err
 	}
 	defer rows.Close()
-	return scanTickets(rows)
+	
+	var tickets []*models.QueueTicket
+	for rows.Next() {
+		t := &models.QueueTicket{}
+		err := rows.Scan(
+			&t.ID,
+			&t.UserID,
+			&t.VenueID,
+			&t.VenueName,
+			&t.ServiceID,
+			&t.ServiceName,
+			&t.TicketNumber,
+			&t.Status,
+			&t.JoinedAt,
+			&t.ServedAt,
+			&t.CancelledAt,
+			&t.CreatedAt,
+			&t.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		tickets = append(tickets, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return tickets, nil
 }
 
 func (r *queueTicketRepository) CallNext(ctx context.Context, ownerID, serviceID int) (*models.QueueTicket, error) {

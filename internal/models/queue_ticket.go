@@ -6,7 +6,9 @@ type QueueTicket struct {
 	ID           int        `json:"id"`
 	UserID       int        `json:"user_id"`
 	VenueID      int        `json:"venue_id"`
+	VenueName    string     `json:"venue_name,omitempty"`
 	ServiceID    int        `json:"service_id"`
+	ServiceName  string     `json:"service_name,omitempty"`
 	TicketNumber string     `json:"ticket_number"`
 	Status       string     `json:"status"`
 	JoinedAt     time.Time  `json:"joined_at"`
