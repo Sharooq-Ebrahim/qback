@@ -9,15 +9,18 @@ import (
 	"qback/internal/middleware"
 	"qback/internal/repository"
 	"qback/internal/service"
+	"qback/internal/sse"
 )
 
 type StaffHandler struct {
-	svc service.StaffService
+	svc    service.StaffService
+	broker *sse.Broker
 }
 
-func NewStaffHandler(svc service.StaffService) *StaffHandler {
+func NewStaffHandler(svc service.StaffService, broker *sse.Broker) *StaffHandler {
 	return &StaffHandler{
-		svc: svc,
+		svc:    svc,
+		broker: broker,
 	}
 }
 
@@ -76,6 +79,8 @@ func (h *StaffHandler) CallNext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.broker.PublishTicketUpdate(ownerID, ticket)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ticket)
 }
@@ -98,6 +103,8 @@ func (h *StaffHandler) ServeTicket(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error": "failed to serve ticket"}`, http.StatusInternalServerError)
 		return
 	}
+
+	h.broker.PublishTicketUpdate(ownerID, ticket)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ticket)
@@ -122,6 +129,8 @@ func (h *StaffHandler) NoShowTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.broker.PublishTicketUpdate(ownerID, ticket)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ticket)
 }
@@ -144,6 +153,8 @@ func (h *StaffHandler) CancelTicket(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error": "failed to cancel ticket"}`, http.StatusInternalServerError)
 		return
 	}
+
+	h.broker.PublishTicketUpdate(ownerID, ticket)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ticket)

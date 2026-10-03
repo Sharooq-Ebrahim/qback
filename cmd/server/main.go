@@ -13,6 +13,7 @@ import (
 	"qback/internal/models"
 	"qback/internal/repository"
 	"qback/internal/service"
+	"qback/internal/sse"
 )
 
 func main() {
@@ -61,7 +62,9 @@ func main() {
 	tokenHandler := handlers.NewTokenHandler(queueLogic)
 
 	staffLogic := service.NewStaffService(queueRepo)
-	staffHandler := handlers.NewStaffHandler(staffLogic)
+	sseBroker := sse.NewBroker()
+	staffHandler := handlers.NewStaffHandler(staffLogic, sseBroker)
+	sseHandler := handlers.NewSSEHandler(sseBroker)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/signup", authHandler.Signup)
@@ -95,6 +98,7 @@ func main() {
 	mux.Handle("POST /api/tokens/{id}/cancel", protectedUser(http.HandlerFunc(tokenHandler.Cancel)))
 
 	mux.Handle("GET /api/staff/queues", protectedAdmin(http.HandlerFunc(staffHandler.GetQueues)))
+	mux.Handle("GET /api/staff/queues/events", protectedAdmin(http.HandlerFunc(sseHandler.StreamQueueEvents)))
 	mux.Handle("POST /api/staff/queues/{queue_id}/call-next", protectedAdmin(http.HandlerFunc(staffHandler.CallNext)))
 	mux.Handle("POST /api/staff/tickets/{ticket_id}/serve", protectedAdmin(http.HandlerFunc(staffHandler.ServeTicket)))
 	mux.Handle("POST /api/staff/tickets/{ticket_id}/no-show", protectedAdmin(http.HandlerFunc(staffHandler.NoShowTicket)))
