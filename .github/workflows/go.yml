@@ -1,4 +1,4 @@
-name: qback
+name: qback CI
 
 on:
   push:
